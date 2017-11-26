@@ -10,8 +10,36 @@ local enable_drops            = true  -- enable drops or not
 local cleanup_charge_per_node = 5     -- energy used to kill one sunflower
 local car = 20                        -- cleanup_action_radius
 local chatmessage             = true
+local runonjungle             = false  -- do not set to true unless you worked over the prizes table (see comment below)
 
 technic.register_power_tool("antipest:cleanup", cleanup_max_charge)
+
+-- *** important notice concerning prizes
+-- if you want to make it work turn runonjungle to "true" and edit the below list
+-- which must suit to the mods you have onyour server
+--
+-- the list is :    number of killes sunflowers, name of node you get as a gift, how many in number of that node, string which is written in chat
+--
+-- for example line one here says: killing 10000 sunflowers will add 100 moretrees:raw_coconut to your inventory, using "raw_coconut" as chat output
+--
+-- ***
+
+
+local prizes = {
+		  {10000, "moretrees:raw_coconut", 100, "raw coconut"},
+		  {10001, "indofood:gula_merah", 50, "palm sugar"},
+		  {20000, "default:copperblock", 100, "copper blocks"},
+		  {30000, "clams:collectedalgae", 512, "collected algae"},
+		  {40000, "default:diamondblock", 100, "diamond blocks"},
+		  {50000, "clams:crushedwhite", 1024, "crushed shell"},
+		  {60000, "technic:chromium_block", 100, "chromium blocks"},
+		  {70000, "lavaex:lavaex", 512, "lava extingisher"},
+		  {80000, "moretrees:palm_fruit_trunk", 10, "coconut fruit trunks"},
+		  {90000, "moretrees:date_palm_ffruit_trunk", 10, "date palm fruit trunks"},
+		  {100000, "aviator:aviator", 1024, "flight devices"}
+		  
+}
+
 
 
 -- load scoreboard
@@ -75,6 +103,25 @@ local function sortscore()
 end
 
 
+local function check_prizes(user,number)
+      local name = user:get_player_name()
+      local inv = user:get_inventory()
+      for i in ipairs(prizes) do
+         local goal = prizes[i][1]
+	 local nodename = prizes[i][2]
+	 local howmuch = prizes[i][3]
+	 local sayit = prizes[i][4]
+	 
+	    if score[name] + number == goal then
+		  minetest.chat_send_player(name, core.colorize("#FF6700", "Congratulation: You killed your "..goal.."s evil sunflower !! Keep up the good work. "..howmuch.." "..sayit.." have been added to your inv"))
+		  inv:add_item("main", {name=nodename, count=howmuch})
+	    end
+      end
+end
+      
+      
+      
+
 local function cleanup_dig(pos, current_charge, user)
 	local name = user:get_player_name()
 	local minp = vector.subtract(pos, car)
@@ -93,6 +140,8 @@ local function cleanup_dig(pos, current_charge, user)
 				current_charge = current_charge - cleanup_charge_per_node
 				minetest.remove_node(cpos)
 				counter = counter +1
+				if score[name] and runonjungle then check_prizes(user,counter) end
+				
 			   else
 			
 			      break
@@ -178,6 +227,7 @@ minetest.register_tool("antipest:cleanup", {
 	on_place = function(itemstack, placer, pointed_thing)
 
 		local name = placer:get_player_name()
+		
 
 		chatmessage = not chatmessage
 		if chatmessage then 
