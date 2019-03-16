@@ -36,7 +36,7 @@ local prizes = {
 		  {70000, "lavaex:lavaex", 512, "lava extingisher"},
 		  {80000, "moretrees:palm_fruit_trunk", 10, "coconut fruit trunks"},
 		  {90000, "moretrees:date_palm_ffruit_trunk", 10, "date palm fruit trunks"},
-		  {100000, "aviator:aviator", 1024, "flight devices"}
+		  {100000, "aviator:aviator", 128, "flight devices"}
 		  
 }
 
@@ -127,8 +127,9 @@ local function cleanup_dig(pos, current_charge, user)
 	local minp = vector.subtract(pos, car)
         local maxp = vector.add(pos, car)
 	local counter = 0
+	local countall = 0
 
-	local poslist = minetest.find_nodes_in_area(minp, maxp, {"flowers:sunflower"})
+	local poslist = minetest.find_nodes_in_area(minp, maxp, {"flowers:sunflower","group:nettle_weed"})
 
 		for _,cpos in pairs(poslist) do
 
@@ -138,8 +139,12 @@ local function cleanup_dig(pos, current_charge, user)
 			   if current_charge > cleanup_charge_per_node then
 
 				current_charge = current_charge - cleanup_charge_per_node
+				if minetest.get_node(cpos).name == "flowers:sunflower" then
+					counter = counter +1
+				end
+				countall = countall + 1
 				minetest.remove_node(cpos)
-				counter = counter +1
+				
 				if score[name] and runonjungle then check_prizes(user,counter) end
 				
 			   else
@@ -172,8 +177,8 @@ local function cleanup_dig(pos, current_charge, user)
 		      
 		if enable_drops then
 			local inv = user:get_inventory()
-			local blocks = math.floor(counter/81)
-			local lumps = math.floor((counter-blocks*81)/9) 
+			local blocks = math.floor(counteall/81)
+			local lumps = math.floor((counteall-blocks*81)/9) 
         
         		inv:add_item("main", {name="default:coal_lump", count=lumps})
 			inv:add_item("main", {name="default:coalblock", count=blocks})
@@ -262,7 +267,7 @@ minetest.register_chatcommand("score", {
 
 	    local fname = sortscore()
 	    if fname then
-	      --minetest.chat_send_player(name, ">>> Highscore is :"..score[highscore].." by "..highscore)
+	      if score[name] then minetest.chat_send_player(name, core.colorize("#FF6700", ">>> Your score is: "..score[name])) end
 	      minetest.show_formspec(name, "antipest:the_killers", fname)
 	    end
 
