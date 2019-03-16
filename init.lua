@@ -159,7 +159,7 @@ local function cleanup_dig(pos, current_charge, user)
 		end	
 
 	
-	if counter > 1 then
+	if counter > 0 then
 
 		if chatmessage then
 
@@ -174,18 +174,19 @@ local function cleanup_dig(pos, current_charge, user)
 				score[name] = counter
 		      end
 		end
+	end
+	
 		      
-		if enable_drops then
-			local inv = user:get_inventory()
-			local blocks = math.floor(counteall/81)
-			local lumps = math.floor((counteall-blocks*81)/9) 
-        
-        		inv:add_item("main", {name="default:coal_lump", count=lumps})
-			inv:add_item("main", {name="default:coalblock", count=blocks})
-
-		end
+	if enable_drops and countall > 0 then
+		local inv = user:get_inventory()
+		local blocks = math.floor(countall/81)
+		local lumps = math.floor((countall-blocks*81)/9) 
+       
+		inv:add_item("main", {name="default:coal_lump", count=lumps})
+		inv:add_item("main", {name="default:coalblock", count=blocks})
 
 	end
+
 
 	savelist()
 	return current_charge
