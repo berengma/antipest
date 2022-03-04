@@ -12,8 +12,6 @@ local car = 20                        -- cleanup_action_radius
 local chatmessage             = true
 local runonjungle             = false  -- do not set to true unless you worked over the prizes table (see comment below)
 
-technic.register_power_tool("antipest:cleanup", cleanup_max_charge)
-
 -- *** important notice concerning prizes
 -- if you want to make it work turn runonjungle to "true" and edit the below list
 -- which must suit to the mods you have onyour server
@@ -194,62 +192,63 @@ local function cleanup_dig(pos, current_charge, user)
 				
 end
 
-
-
-
-minetest.register_tool("antipest:cleanup", {
+local antipest_tooldef = {
 	description = S("Kill all the evil sunflowers"),
 	inventory_image = "antipest_cleanup.png",
 	stack_max = 1,
-	wear_represents = "technic_RE_charge",
-	on_refill = technic.refill_RE_charge,
-	on_use = function(itemstack, user, pointed_thing)
-	   local name = user:get_player_name()
-	   
-	      if pointed_thing.under ~= nil then
-	        
-		local meta = minetest.deserialize(itemstack:get_metadata())
-		if not meta or not meta.charge or
-				meta.charge < cleanup_charge_per_node then
-			return
-		end
-
-		
-
-		-- Send current charge to digging function so that the
-		-- cleanup will stop after digging a number of nodes
-		meta.charge = cleanup_dig(pointed_thing.under, meta.charge, user)
-		if not technic.creative_mode then
-			technic.set_RE_wear(itemstack, meta.charge, cleanup_max_charge)
-			itemstack:set_metadata(minetest.serialize(meta))
-		end
-	    end
-	   
-   	   return itemstack
-	   
-	        
-	end,
-
 	on_place = function(itemstack, placer, pointed_thing)
-
 		local name = placer:get_player_name()
-		
-
 		chatmessage = not chatmessage
 		if chatmessage then 
-
 			minetest.chat_send_player(name,">>> Antipest report is ON")
-
 		else
-
 			minetest.chat_send_player(name,">>> Antipest report is OFF")
-
 		end
-
 	end,
+}
 
-
-})
+if technic.plus then
+	antipest_tooldef.on_use = function(itemstack, user, pointed_thing)
+		if pointed_thing.under == nil then
+			return
+		end
+		local charge = technic.get_RE_charge(itemstack)
+		if charge < cleanup_charge_per_node then
+			return
+		end
+		-- Send current charge to digging function so that the
+		-- cleanup will stop after digging a number of nodes
+		charge = cleanup_dig(pointed_thing.under, charge, user)
+		if not technic.creative_mode then
+			technic.set_RE_charge(itemstack, charge)
+			return itemstack
+		end
+	end
+	antipest_tooldef.max_charge = cleanup_max_charge
+	technic.register_power_tool("antipest:cleanup", antipest_tooldef)
+else
+	technic.register_power_tool("antipest:cleanup", cleanup_max_charge)
+	antipest_tooldef.wear_represents = "technic_RE_charge"
+	antipest_tooldef.on_refill = technic.refill_RE_charge
+	antipest_tooldef.on_use = function(itemstack, user, pointed_thing)
+		if pointed_thing.under ~= nil then
+			local meta = minetest.deserialize(itemstack:get_metadata())
+			if not meta or not meta.charge or
+					meta.charge < cleanup_charge_per_node then
+				return
+			end
+			-- Send current charge to digging function so that the
+			-- cleanup will stop after digging a number of nodes
+			meta.charge = cleanup_dig(pointed_thing.under, meta.charge, user)
+			if not technic.creative_mode then
+				technic.set_RE_wear(itemstack, meta.charge, cleanup_max_charge)
+				itemstack:set_metadata(minetest.serialize(meta))
+			end
+		end
+		return itemstack
+	end
+	minetest.register_tool("antipest:cleanup", antipest_tooldef)
+end
 
 minetest.register_craft({
 	output = "antipest:cleanup",
